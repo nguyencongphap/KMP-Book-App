@@ -47,14 +47,3 @@ private val books = (1 .. 100).map {
         numEditions = 3
     )
 }
-
-@Preview
-@Composable
-private fun BookListScreenPreview() {
-    BookListScreen(
-        state = BookListState(
-            searchResults = books,
-        ),
-        onAction = {} // recommended to name lambda like this unless it's a composable content lambda
-    )
-}

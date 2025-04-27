@@ -2,7 +2,9 @@
 
 package com.plcoding.bookpedia.book.presentation.book_detail
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
@@ -30,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cmp_bookpedia.composeapp.generated.resources.Res
 import cmp_bookpedia.composeapp.generated.resources.description_unavailable
@@ -46,11 +46,14 @@ import com.plcoding.bookpedia.core.presentation.SandYellow
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.round
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun BookDetailScreenRoot(
     viewModel: BookDetailViewModel,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit, // to pop this screen out of the navbackstack
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -67,16 +70,22 @@ fun BookDetailScreenRoot(
 
             // let viewmodel handle actions that are within its responsibilities
             viewModel.onAction(action)
-        }
+        },
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun BookDetailScreen(
     state: BookDetailState,
-    onAction: (BookDetailAction) -> Unit
+    onAction: (BookDetailAction) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     BlurredImageBackground(
+        bookId = state.book?.id,
         imageUrl = state.book?.imageUrl,
         isFavorite = state.isFavorite,
         onFavoriteClick = {
@@ -85,6 +94,8 @@ private fun BookDetailScreen(
         onBackClick = {
             onAction(BookDetailAction.OnBackClick)
         },
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier.fillMaxSize(),
     ) {
         if (state.book != null) {

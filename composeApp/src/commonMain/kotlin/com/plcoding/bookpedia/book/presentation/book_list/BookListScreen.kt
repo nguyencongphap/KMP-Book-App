@@ -1,5 +1,8 @@
 package com.plcoding.bookpedia.book.presentation.book_list
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,11 +52,14 @@ import org.koin.compose.viewmodel.koinViewModel
 // The root composable is the normal composable we usually see that take in things
 // that the @Preview cannot work with like ViewModel. So, we isolate things that @Preview
 // can work with into a child composable
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun BookListScreenRoot(
     viewModel: BookListViewModel = koinViewModel(),
     onBookClick: (Book) -> Unit,
-    modifier: Modifier
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
+    modifier: Modifier,
 ) {
     // get state from view model to observe
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -71,14 +77,19 @@ fun BookListScreenRoot(
             }
             // forward the action to ViewModel for changing state
             viewModel.onAction(action)
-        }
+        },
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun BookListScreen(
     state: BookListState,
-    onAction: (BookListActions) -> Unit
+    onAction: (BookListActions) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -231,7 +242,9 @@ fun BookListScreen(
                                                     onAction(BookListActions.OnBookClick(it))
                                                 },
                                                 modifier = Modifier.fillMaxSize(),
-                                                scrollState = searchResultsListState
+                                                scrollState = searchResultsListState,
+                                                sharedTransitionScope = sharedTransitionScope,
+                                                animatedVisibilityScope = animatedVisibilityScope,
                                             )
                                         }
                                     }
@@ -251,7 +264,9 @@ fun BookListScreen(
                                             onAction(BookListActions.OnBookClick(it))
                                         },
                                         modifier = Modifier.fillMaxSize(),
-                                        scrollState = favoriteBooksListState
+                                        scrollState = favoriteBooksListState,
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
                                     )
                                 }
                             }

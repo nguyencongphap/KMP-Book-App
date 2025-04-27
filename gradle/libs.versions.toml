@@ -17,6 +17,9 @@ kotlin = "2.0.21"
 kotlinx-coroutines = "1.9.0"
 navigationCompose = "2.8.0-alpha10"
 kotlinSerialization = "1.7.3"
+jetbrains-compose-animation = "1.7.3"
+androidx-compose-animation = "1.7.3"
+
 koin = "4.0.0"
 ktor = "3.0.0"
 coil3 = "3.0.0-rc02"
@@ -41,6 +44,8 @@ kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-co
 
 jetbrains-compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref= "navigationCompose"}
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinSerialization" }
+jetbrains-compose-animation = { module = "org.jetbrains.compose.animation:animation", version.ref="jetbrains-compose-animation"}
+androidx-compose-animation = { module = "androidx.compose.animation:animation-android", version.ref="androidx-compose-animation"}
 
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }

@@ -1,6 +1,13 @@
 package com.plcoding.bookpedia.book.presentation.book_detail.components
 
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.BoundsTransform
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.ArcMode
+import androidx.compose.animation.core.ExperimentalAnimationSpecApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,15 +21,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,11 +54,14 @@ import com.plcoding.bookpedia.core.presentation.DarkBlue
 import com.plcoding.bookpedia.core.presentation.DesertWhite
 import com.plcoding.bookpedia.core.presentation.PulseAnimation
 import com.plcoding.bookpedia.core.presentation.SandYellow
+import com.plcoding.bookpedia.core.presentation.SharedContentKeys
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalAnimationSpecApi::class)
 @Composable
 fun BlurredImageBackground(
+    bookId: String?,
     imageUrl: String?, // needs to know where to load image from
     // Note that this state as well as our heart icon is updated based on the data we observe
     // from the db and not the action of clicking the icon. So, there's no way we have a filled
@@ -63,164 +70,176 @@ fun BlurredImageBackground(
     onFavoriteClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit // screen content
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    content: @Composable () -> Unit, // screen content
 ) {
-
-    // we do image loading again
-    // since coil already cached this image on the book list. The image for this book detail screen
-    // will be loaded instantly from our cache
-    var imageLoadResult by remember {
-        mutableStateOf<Result<Painter>?>(null)
-    }
-
-    val painter = rememberAsyncImagePainter(
-        model = imageUrl,
-        onSuccess = { // lambda
-            // simply updates our imageLoadResult depending on whether the image has valid dimensions
-            val size = it.painter.intrinsicSize
-            imageLoadResult = if (size.width > 1 && size.height > 1) {
-                // successful result if image dimensions are greater than 1x1
-                Result.success(it.painter)
-            } else {
-                Result.failure(Exception("Invalid image dimensions"))
-            }
-        },
-        onError = {
-            it.result.throwable.printStackTrace()
+        // we do image loading again
+        // since coil already cached this image on the book list. The image for this book detail screen
+        // will be loaded instantly from our cache
+        var imageLoadResult by remember {
+            mutableStateOf<Result<Painter>?>(null)
         }
-    )
 
-    Box(modifier = modifier) { // helps aligning back button
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(0.3f) // take up 30% of column
-                    .fillMaxWidth()
-                    .background(DarkBlue) // set bg to dark blue when there's no image to use as bg
-            ) {
-                // get or null returns painter if that exists
-                // if we have the painter, we can draw the image
-                imageLoadResult?.getOrNull()?.let { painter ->
-                    Image(
-                        painter = painter,
-                        contentDescription = stringResource(Res.string.book_cover),
-                        // make this bg image fill the width, blur, and crop its top and bot
-                        // to fit in the box
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .blur(20.dp)
-                    )
+        val painter = rememberAsyncImagePainter(
+            model = imageUrl,
+            onSuccess = { // lambda
+                // simply updates our imageLoadResult depending on whether the image has valid dimensions
+                val size = it.painter.intrinsicSize
+                imageLoadResult = if (size.width > 1 && size.height > 1) {
+                    // successful result if image dimensions are greater than 1x1
+                    Result.success(it.painter)
+                } else {
+                    Result.failure(Exception("Invalid image dimensions"))
                 }
+            },
+            onError = {
+                it.result.throwable.printStackTrace()
+            }
+        )
+
+        val bookCoverBoundsTransform = BoundsTransform { initialBounds, targetBounds ->
+            keyframes {
+                durationMillis = 1000
+                initialBounds at 0 using ArcMode.ArcBelow using FastOutSlowInEasing
+                targetBounds at 1000
+            }
+        }
+
+        Box(modifier = modifier) { // helps aligning back button
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(0.3f) // take up 30% of column
+                        .fillMaxWidth()
+                        .background(DarkBlue) // set bg to dark blue when there's no image to use as bg
+                ) {
+                    // get or null returns painter if that exists
+                    // if we have the painter, we can draw the image
+                    imageLoadResult?.getOrNull()?.let { painter ->
+                        Image(
+                            painter = painter,
+                            contentDescription = stringResource(Res.string.book_cover),
+                            // make this bg image fill the width, blur, and crop its top and bot
+                            // to fit in the box
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .blur(20.dp)
+                        )
+                    }
+                }
+
+                // the 70% of column
+                Box(
+                    modifier = Modifier
+                        .weight(0.7f)
+                        .fillMaxWidth()
+                        .background(DesertWhite)
+                )
             }
 
-            // the 70% of column
-            Box(
+            IconButton(
+                onClick = onBackClick,
                 modifier = Modifier
-                    .weight(0.7f)
-                    .fillMaxWidth()
-                    .background(DesertWhite)
-            )
-        }
-
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(top = 16.dp, start = 16.dp)
-                .statusBarsPadding() // add more padding to avoid status bar
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(Res.string.go_back),
-                tint = Color.White // TODO: maybe add graphic layers to make this stand out from background
-            )
-        }
-
-        // Center book cover
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // invisible that is half the blurred background tall
-            Spacer(modifier = Modifier.fillMaxHeight(0.15f))
-            ElevatedCard(
-                modifier = Modifier
-                    .height(230.dp)
-                    .aspectRatio(2 / 3f),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.elevatedCardElevation(
-                    defaultElevation = 15.dp // for shadows
-                )
+                    .align(Alignment.TopStart)
+                    .padding(top = 16.dp, start = 16.dp)
+                    .statusBarsPadding() // add more padding to avoid status bar
             ) {
-                AnimatedContent(
-                    targetState = imageLoadResult
-                ) { result ->
-                    when(result) {
-                        null -> Box( // use box to align
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            PulseAnimation(modifier = Modifier.size(60.dp))
-                        }
-                        else -> {
-                            Box { // to align the favorite book icon
-                                Image(
-                                    painter = if(result.isSuccess) painter else {
-                                        painterResource(Res.drawable.book_error_2)
-                                    },
-                                    contentDescription = stringResource(Res.string.book_cover),
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Transparent), // remove bg of book cover img if it has one
-                                    contentScale = if (result.isSuccess) {
-                                        ContentScale.Crop
-                                    } else {
-                                        ContentScale.Fit
-                                    }
-                                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(Res.string.go_back),
+                    tint = Color.White // TODO: maybe add graphic layers to make this stand out from background
+                )
+            }
 
-                                IconButton(
-                                    onClick = onFavoriteClick,
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .background(
-                                            brush = Brush.radialGradient(
-                                                colors = listOf(
-                                                    SandYellow, Color.Transparent
-                                                ),
-                                                radius = 70f
-                                            )
-                                        )
-                                ) {
-                                    Icon(
-                                        imageVector = if (isFavorite) {
-                                            Icons.Filled.Favorite
-                                        } else {
-                                            Icons.Outlined.FavoriteBorder
+            // Center book cover
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // invisible that is half the blurred background tall
+                Spacer(modifier = Modifier.fillMaxHeight(0.15f))
+                ElevatedCard(
+                    modifier = Modifier
+                        .height(230.dp)
+                        .aspectRatio(2 / 3f),
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.elevatedCardElevation(
+                        defaultElevation = 15.dp // for shadows
+                    )
+                ) {
+                    with(sharedTransitionScope) {
+                        when(imageLoadResult) {
+                            null -> Box( // use box to align
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                PulseAnimation(modifier = Modifier.size(60.dp))
+                            }
+                            else -> {
+                                Box { // to align the favorite book icon
+                                    Image(
+                                        painter = if(imageLoadResult!!.isSuccess) painter else {
+                                            painterResource(Res.drawable.book_error_2)
                                         },
-                                        tint = Color.Red,
-                                        contentDescription = if (isFavorite) {
-                                            stringResource(Res.string.remove_from_favorites) // signal about the result effect of clicking the icon
-                                        } else{
-                                            stringResource(Res.string.mark_as_favorite)
+                                        contentDescription = stringResource(Res.string.book_cover),
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Transparent) // remove bg of book cover img if it has one
+                                            .sharedElement(
+                                                state = rememberSharedContentState(key = "${SharedContentKeys.BOOK_IMAGE}/$bookId"), // let compose know which composable transitions to which composable
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                boundsTransform = bookCoverBoundsTransform
+                                            )
+                                        ,
+                                        contentScale = if (imageLoadResult!!.isSuccess) {
+                                            ContentScale.Crop
+                                        } else {
+                                            ContentScale.Fit
                                         }
                                     )
-                                }
-                            }
 
+                                    IconButton(
+                                        onClick = onFavoriteClick,
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .background(
+                                                brush = Brush.radialGradient(
+                                                    colors = listOf(
+                                                        SandYellow, Color.Transparent
+                                                    ),
+                                                    radius = 70f
+                                                )
+                                            )
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isFavorite) {
+                                                Icons.Filled.Favorite
+                                            } else {
+                                                Icons.Outlined.FavoriteBorder
+                                            },
+                                            tint = Color.Red,
+                                            contentDescription = if (isFavorite) {
+                                                stringResource(Res.string.remove_from_favorites) // signal about the result effect of clicking the icon
+                                            } else{
+                                                stringResource(Res.string.mark_as_favorite)
+                                            }
+                                        )
+                                    }
+                                }
+
+                            }
                         }
                     }
-
                 }
-            }
 
-            // Info of the book
-            content()
-        }
+                // Info of the book
+                content()
+            }
     }
 }
 
