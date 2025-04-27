@@ -63,7 +63,6 @@ kotlin {
             implementation(libs.jetbrains.compose.navigation)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.jetbrains.compose.animation)
-            implementation(libs.androidx.compose.animation)
 
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)

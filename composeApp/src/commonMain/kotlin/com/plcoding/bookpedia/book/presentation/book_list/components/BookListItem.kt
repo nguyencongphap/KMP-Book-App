@@ -196,7 +196,14 @@ fun BookListItem(
                         )
                     }
                     book.averageRating?.let { avgRating ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState("${SharedContentKeys.BOOK_RATING}/${book.id}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    boundsTransform = { _, _ -> tween(1000) }
+                                )
+                        ) {
                             Text(
                                 text = "${round(avgRating * 10) / 10.0}", // round to 1 decimal place
                                 style = MaterialTheme.typography.bodyMedium,
